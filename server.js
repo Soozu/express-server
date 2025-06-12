@@ -48,12 +48,10 @@ app.use('/api/', limiter);
 // CORS configuration
 const corsOptions = {
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    process.env.PYTHON_BACKEND_URL || 'http://localhost:5000',
+    process.env.FRONTEND_URL,
+    process.env.PYTHON_BACKEND_URL,
     'https://wertigo.netlify.app',
     'https://web-production-88f83.up.railway.app',
-    'http://localhost:3000',
-    'http://localhost:5000'
   ].filter(Boolean),
   credentials: true,
   optionsSuccessStatus: 200

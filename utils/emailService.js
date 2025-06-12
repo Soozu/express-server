@@ -3,17 +3,7 @@ require('dotenv').config();
 
 // Create transporter
 const createTransporter = () => {
-  console.log('Setting up email transporter with:', {
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    auth: {
-      user: process.env.EMAIL_USER,
-      // Not logging password for security reasons
-    }
-  });
-  
-  return nodemailer.createTransport({
+  return nodemailer.createTransporter({
     service: process.env.EMAIL_SERVICE || 'gmail',
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
@@ -21,9 +11,7 @@ const createTransporter = () => {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD
-    },
-    debug: process.env.NODE_ENV !== 'production',
-    logger: process.env.NODE_ENV !== 'production'
+    }
   });
 };
 
@@ -240,7 +228,6 @@ Keep this email safe - you'll need the Tracker ID to access your trip!
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Trip tracker email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
     
   } catch (error) {
@@ -252,30 +239,11 @@ Keep this email safe - you'll need the Tracker ID to access your trip!
 // Test email configuration
 const testEmailConnection = async () => {
   try {
-    console.log('Creating email transporter for testing...');
     const transporter = createTransporter();
-    
-    console.log('Verifying transporter configuration...');
     await transporter.verify();
-    
-    console.log('Email service is ready');
     return true;
   } catch (error) {
     console.error('Email service configuration error:', error);
-    
-    // More specific error handling
-    if (error.code === 'EAUTH') {
-      console.error('Authentication failed. This is likely due to:');
-      console.error('1. Using your regular password instead of an App Password');
-      console.error('2. App Password is incorrect or has been revoked');
-      console.error('3. The email account has 2FA enabled but no App Password is being used');
-    } else if (error.code === 'ESOCKET') {
-      console.error('Connection error. This could be due to:');
-      console.error('1. Incorrect SMTP host or port');
-      console.error('2. Network connectivity issues');
-      console.error('3. Firewall blocking the connection');
-    }
-    
     return false;
   }
 };
