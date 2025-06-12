@@ -224,7 +224,7 @@ model TripReview {
   id           Int      @id @default(autoincrement())
   tripId       String   @map("trip_id") @db.VarChar(36)
   reviewerName String   @map("reviewer_name") @db.VarChar(255)
-  rating       Int      @db.TinyInt // 1-5 stars
+  rating       Int      // 1-5 stars (range: 1-5)
   reviewText   String   @map("review_text") @db.Text
   email        String?  @db.VarChar(255) // Optional for anonymous reviews
   isApproved   Boolean  @default(true) @map("is_approved")
@@ -244,7 +244,7 @@ model TripReview {
 model PlatformReview {
   id           Int      @id @default(autoincrement())
   reviewerName String   @map("reviewer_name") @db.VarChar(255)
-  rating       Int      @db.TinyInt // 1-5 stars
+  rating       Int      // 1-5 stars (range: 1-5)
   reviewText   String   @map("review_text") @db.Text
   destination  String?  @db.VarChar(255) // Destination visited
   email        String?  @db.VarChar(255) // Optional for anonymous reviews
