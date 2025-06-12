@@ -28,8 +28,8 @@ app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
 }));
 
-// Trust proxy for Railway/Render
-if (process.env.RAILWAY || process.env.RENDER) {
+// Trust proxy for Render
+if (process.env.RENDER) {
   app.set('trust proxy', 1);
 }
 
@@ -51,9 +51,15 @@ const corsOptions = {
     process.env.FRONTEND_URL || 'http://localhost:3000',
     process.env.PYTHON_BACKEND_URL || 'http://localhost:5000',
     'http://localhost:3000',
-    'http://localhost:5000'
+    'http://localhost:5000',
+    'https://wertigo.netlify.app', // Production frontend
+    'https://wertigo.netlify.app/', // With trailing slash
+    'http://localhost:5173', // Vite dev server
+    'http://localhost:3000' // React dev server
   ].filter(Boolean),
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -189,7 +195,7 @@ app.listen(PORT, async () => {
   console.log(`🗺️ Trips API: http://localhost:${PORT}/api/trips`);
   console.log(`👑 Admin API: http://localhost:${PORT}/api/admin`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗄️ Database: PostgreSQL`);
+  console.log(`🗄️ Database: MySQL`);
   
   // Test database connection
   try {
