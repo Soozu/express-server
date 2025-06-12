@@ -50,16 +50,12 @@ const corsOptions = {
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:3000',
     process.env.PYTHON_BACKEND_URL || 'http://localhost:5000',
+    'https://wertigo.netlify.app',
+    'https://web-production-88f83.up.railway.app',
     'http://localhost:3000',
-    'http://localhost:5000',
-    'https://wertigo.netlify.app', // Production frontend
-    'https://wertigo.netlify.app/', // With trailing slash
-    'http://localhost:5173', // Vite dev server
-    'http://localhost:3000' // React dev server
+    'http://localhost:5000'
   ].filter(Boolean),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
