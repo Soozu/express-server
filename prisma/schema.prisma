@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  firstName String?  @map("first_name") @db.VarChar(50)
+  lastName  String?  @map("last_name") @db.VarChar(50)
+  location  String?  @db.VarChar(100)
+  bio       String?  @db.Text
+  role      UserRole @default(user)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sessions          UserSession[]
+  trips             Trip[]
+  savedTrips        SavedTrip[]
+  preferences       UserPreference[]
+  generatedTickets  GeneratedTicket[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  sessionId String   @unique @map("session_id") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+enum TripStatus {
+  active
+  completed
+  cancelled
+}
+
+model Trip {
+  id          String     @id @db.VarChar(36)
+  userId      Int?       @map("user_id")
+  sessionId   String?    @map("session_id") @db.VarChar(255)
+  tripName    String?    @map("trip_name") @db.VarChar(100)
+  destination String?    @db.VarChar(100)
+  startDate   DateTime?  @map("start_date") @db.Date
+  endDate     DateTime?  @map("end_date") @db.Date
+  budget      Decimal?   @db.Decimal(10, 2)
+  travelers   Int        @default(1)
+  status      TripStatus @default(active)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  destinations TripDestination[]
+  routes       TripRoute[]
+  trackers     TripTracker[]
+  reviews      TripReview[]
+
+  @@index([sessionId], map: "trips_session_id_idx")
+  @@index([userId], map: "trips_user_id_idx")
+  @@map("trips")
+}
+
+model TripDestination {
+  id                   Int      @id @default(autoincrement())
+  tripId               String   @map("trip_id") @db.VarChar(36)
+  destinationId        Int?     @map("destination_id")
+  name                 String   @db.VarChar(255)
+  city                 String?  @db.VarChar(100)
+  province             String?  @db.VarChar(100)
+  description          String?  @db.Text
+  category             String?  @db.VarChar(50)
+  rating               Decimal? @db.Decimal(3, 2)
+  budget               Decimal? @db.Decimal(10, 2)
+  latitude             Decimal? @db.Decimal(10, 8)
+  longitude            Decimal? @db.Decimal(11, 8)
+  operatingHours       String?  @map("operating_hours") @db.VarChar(255)
+  contactInformation   String?  @map("contact_information") @db.VarChar(255)
+  orderIndex           Int      @default(0) @map("order_index")
+  addedAt              DateTime @default(now()) @map("added_at")
+
+  // Relations
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId], map: "trip_destinations_trip_id_idx")
+  @@index([tripId, orderIndex], map: "trip_destinations_order_idx")
+  @@map("trip_destinations")
+}
+
+model TripRoute {
+  id           Int      @id @default(autoincrement())
+  tripId       String   @map("trip_id") @db.VarChar(36)
+  routeData    Json?    @map("route_data")
+  distanceKm   Decimal? @map("distance_km") @db.Decimal(8, 2)
+  timeMinutes  Int?     @map("time_minutes")
+  routeSource  String?  @map("route_source") @db.VarChar(50)
+  calculatedAt DateTime @default(now()) @map("calculated_at")
+
+  // Relations
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId], map: "trip_routes_trip_id_idx")
+  @@map("trip_routes")
+}
+
+model SavedTrip {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  tripName    String   @map("trip_name") @db.VarChar(100)
+  destination String?  @db.VarChar(100)
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  budget      Decimal? @db.Decimal(10, 2)
+  travelers   Int      @default(1)
+  tripData    Json?    @map("trip_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_trips")
+}
+
+model UserPreference {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  preferenceKey   String   @map("preference_key") @db.VarChar(50)
+  preferenceValue String?  @map("preference_value") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, preferenceKey], map: "user_preference")
+  @@map("user_preferences")
+}
+
+enum TicketType {
+  FLIGHT
+  BUS
+  FERRY
+  TRAIN
+  HOTEL
+  TOUR
+  BOOKING_REF
+  CONFIRMATION
+}
+
+model GeneratedTicket {
+  id               Int        @id @default(autoincrement())
+  ticketId         String     @unique @map("ticket_id") @db.VarChar(50)
+  ticketType       TicketType @map("ticket_type")
+  userId           Int?       @map("user_id")
+  sessionId        String?    @map("session_id") @db.VarChar(255)
+  isUsed           Boolean    @default(false) @map("is_used")
+  usedAt           DateTime?  @map("used_at")
+  includeTimestamp Boolean    @default(true) @map("include_timestamp")
+  metadata         Json?
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId], map: "generated_tickets_ticket_id_idx")
+  @@index([userId], map: "generated_tickets_user_id_idx")
+  @@index([sessionId], map: "generated_tickets_session_id_idx")
+  @@index([ticketType], map: "generated_tickets_ticket_type_idx")
+  @@index([createdAt], map: "generated_tickets_created_at_idx")
+  @@map("generated_tickets")
+}
+
+model TripTracker {
+  id           Int       @id @default(autoincrement())
+  trackerId    String    @unique @map("tracker_id") @db.VarChar(50)
+  tripId       String    @map("trip_id") @db.VarChar(36)
+  email        String    @db.VarChar(255)
+  travelerName String?   @map("traveler_name") @db.VarChar(255)
+  phone        String?   @db.VarChar(50)
+  saveDate     DateTime? @map("save_date") @db.Date
+  isActive     Boolean   @default(true) @map("is_active")
+  accessCount  Int       @default(0) @map("access_count")
+  lastAccessed DateTime? @map("last_accessed")
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([trackerId], map: "trip_trackers_tracker_id_idx")
+  @@index([tripId], map: "trip_trackers_trip_id_idx")
+  @@index([email], map: "trip_trackers_email_idx")
+  @@index([createdAt], map: "trip_trackers_created_at_idx")
+  @@map("trip_trackers")
+}
+
+// New models for reviews functionality
+model TripReview {
+  id           Int      @id @default(autoincrement())
+  tripId       String   @map("trip_id") @db.VarChar(36)
+  reviewerName String   @map("reviewer_name") @db.VarChar(255)
+  rating       Int      @db.TinyInt // 1-5 stars
+  reviewText   String   @map("review_text") @db.Text
+  email        String?  @db.VarChar(255) // Optional for anonymous reviews
+  isApproved   Boolean  @default(true) @map("is_approved")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId], map: "trip_reviews_trip_id_idx")
+  @@index([rating], map: "trip_reviews_rating_idx")
+  @@index([createdAt], map: "trip_reviews_created_at_idx")
+  @@map("trip_reviews")
+}
+
+// Platform reviews for general travel experiences (not tied to specific trips)
+model PlatformReview {
+  id           Int      @id @default(autoincrement())
+  reviewerName String   @map("reviewer_name") @db.VarChar(255)
+  rating       Int      @db.TinyInt // 1-5 stars
+  reviewText   String   @map("review_text") @db.Text
+  destination  String?  @db.VarChar(255) // Destination visited
+  email        String?  @db.VarChar(255) // Optional for anonymous reviews
+  isApproved   Boolean  @default(true) @map("is_approved")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([rating], map: "platform_reviews_rating_idx")
+  @@index([createdAt], map: "platform_reviews_created_at_idx")
+  @@index([destination], map: "platform_reviews_destination_idx")
+  @@map("platform_reviews")
+} 
